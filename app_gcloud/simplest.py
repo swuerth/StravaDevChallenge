@@ -20,7 +20,6 @@ app.nquestion1=len(app.question1)
 f = open('../secrets.txt', 'r')
 MY_STRAVA_CLIENT_ID = f.readline().strip()
 MY_STRAVA_CLIENT_SECRET = f.readline().strip()
-#STORED_ACCESS_TOKEN = f.readline().strip()
 f.close()
 
 @app.route('/')
@@ -34,21 +33,10 @@ def index():
  
 @app.route('/main')
 def main():
-    client = Client()
-    #print 'swuerth comment: approaching redirct uri'
-    url = client.authorization_url(client_id=MY_STRAVA_CLIENT_ID,
-                                           redirect_uri='http://127.0.0.1:33508/authorization')
-    return redirect(url)
-
-@app.route('/authorization')
-def authorization():
-    #the code is in the results thingy!
-    code = request.args.get('code')
-    client = Client()
-    STORED_ACCESS_TOKEN = client.exchange_code_for_token(client_id=MY_STRAVA_CLIENT_ID,\
-                                                          client_secret=MY_STRAVA_CLIENT_SECRET,\
-                                                          code=code)
-    client = Client(access_token=STORED_ACCESS_TOKEN)
+    access_token = getToken()
+    if access_token == None:
+        return redirectAuth()
+    client = Client(access_token=access_token)
     athlete = client.get_athlete() # Get current athlete details
     #if you want a simple output of first name, last name, just use this line:
     #return athlete.firstname + ' ' + athlete.lastname
@@ -58,10 +46,10 @@ def authorization():
     for a in client.get_activities(before = "2016-08-12T00:00:00Z",  limit=1):
         names.append(a.name)
         maps.append(a.map)
-    # Couldn't figure out how to store it in session! map object is not json-able or something.
-    #session['map']=maps
-    #session['name']=names
+    # another simple output for this bit is to return the name of the route
     #return names[0]
+
+    # but a sightly more complicated output is this matplotlib figure --
     m = maps[0]
     summary_lat_lon = polyline.decode(m.summary_polyline)
     lats = [i[0] for i in summary_lat_lon]
@@ -71,10 +59,10 @@ def authorization():
     session['lons']=lons
     return redirect('/simple.png')
 
+
 @app.route("/simple.png")
 def simple():
-#get the polyline map using api:
-#    m = session['map']
+    #get the polyline map using api:
     lons=session['lons']
     lats=session['lats']
     name=session['name']
@@ -89,6 +77,30 @@ def simple():
     response=make_response(png_output.getvalue())
     response.headers['Content-Type'] = 'image/png'
     return response
+
+
+def redirectAuth():
+    client = Client()
+    url = client.authorization_url(client_id=MY_STRAVA_CLIENT_ID,
+                                   redirect_uri=request.url)
+    return redirect(url)
+
+
+def getToken():
+    access_token = session.get('access_token')
+    if access_token != None:
+        return access_token
+    # the code is in the results thingy!
+    code = request.args.get('code')
+    if code == None:
+        return None
+    client = Client()
+    access_token = client.exchange_code_for_token(client_id=MY_STRAVA_CLIENT_ID,\
+                                                  client_secret=MY_STRAVA_CLIENT_SECRET,\
+                                                  code=code)
+    session['access_token'] = access_token
+    return access_token
+
 
 if __name__ == "__main__":
     app.run(port=33508, debug=True)
