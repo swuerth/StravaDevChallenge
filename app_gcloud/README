@@ -1,0 +1,21 @@
+This is just a simple app using Strava API
+Plot a map of a recent activity you did (most recent one prior to August 12)
+
+Follow these instructions to get it working:
+
+You should be able to run this app locally if you follow these steps:
+
+From within the recommender_app_gcloud directory, type this in the command line:
+source env/bin/activate
+pip install -r requirements.txt
+
+Now you're in a virtual env and you've installed the required packages
+
+Now make sure you have secrets.txt one dir up from simplest.py
+
+Then type:
+python simplest.py
+And if it works, you should be able to navigate your browser to:
+http://127.0.0.1:33508/
+
+And click!
