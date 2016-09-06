@@ -54,15 +54,30 @@ def set_options():
      q = 'Choose a club to analyze.'
      clubs = zip(session['cids'], session['cnames'])
      return render_template('options.html',question=q,clubs=clubs)
-#ans1=cn1,ans2=cn2,ans3=cn3,\
- #                           id1=id1,id2=id2,id3=id3)
   else:   #request was a POST
      session['cid'] = int(request.form['choice'])
      #also store club name..
      club_dict = dict(zip(session['cids'],session['cnames']))
      session['cname']=club_dict[session['cid']]
      print(club_dict)
-  return redirect('/result2')
+  return redirect('/options2')
+
+@app.route("/options2", methods=['GET','POST'])
+def set_options2():
+  if request.method == 'GET':
+     q = 'What are you interested in seeing?'
+     output_types = ['Heatmap of recent club activities',\
+                     'Recent club activities with many achievements']
+     output_inds = range(len(output_types))
+     choices = zip(output_inds, output_types)
+     return render_template('options2.html',question=q,choices=choices)
+  else:   #request was a POST
+     output_choice = int(request.form['choice2'])
+     print output_choice
+     if output_choice == 0:
+        return redirect('/result2')
+     else:
+        return redirect('/result')
 
 @app.route("/result2")
 def heat_map():
@@ -81,7 +96,7 @@ def results_table():
   # get the 5 activities with the most achievements
   club = get_club_activities(client,session['cid'])
   #highest achieving athletes
-  subset = club.sort_values('achievement_counts',ascending=False).head(10)
+  subset = club.sort_values('achievement_counts',ascending=False).head(50)
   #here, route progress to screen...
   #rivals = nearest_rivals(client, max_rivals = 10)
   #rivals = nearest_rivals_from_file()
