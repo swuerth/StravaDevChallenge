@@ -2,12 +2,17 @@ A simple flask app using the Strava API.
 
 Strava Club Highlights -- highlights recent activities from your clubs
 
-Currently set to show a heatmap of your clubs most recent 200 activities
+Currently set to either:
+1)show a heatmap of your clubs most recent 200 activities
+2)list high-achievement activities
 
 To start, enter a virtual environment with 
-virtualenv env
+
+>virtualenv env
+
 Or, if that doesn't work:
-virtualenv -p python2.7 env
+
+>virtualenv -p python2.7 env
 
 Then:
 source env/bin/activate
