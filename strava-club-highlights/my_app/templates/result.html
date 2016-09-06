@@ -1,0 +1,58 @@
+<!doctype html>
+<title>The Result</title>
+<link rel=stylesheet type=text/css href='{{ url_for('static',filename='style2.css')}}'>
+
+<style>
+ table, th, td {
+    border: 1px solid black;
+}
+</style>
+
+<div class=page>
+  <h1>Highest achieving activities for {{session['cname']}} </h1>
+  <div class=metanav>
+
+    <h4>
+<!-- <table style="width:95%">
+   <tr>
+    <th>Artist</th>
+    <th>Track</th>
+    <th>Date</th>
+    <th>Sentiment</th>
+    <th>Lex. Div.</th>
+  </tr>
+  <tr>
+    <td>{{input_artist}}</td>
+    <td>{{input_song}}</td>
+    <td>{{input_date}}</td>
+    <td>{{input_sent}}</td>
+    <td>{{input_lex}}</td>
+  </tr>
+</table> -->
+
+<br>   <br>
+
+<table style="width:95%">
+   <tr>
+    <th>Activity name</th>
+    <th>Achievement Count</th>
+    <th>Link to activity</th>
+  </tr>
+
+  {% for names, achievement_counts, urls in table_rows %}
+
+  <tr>
+    <td>{{names}}</td>
+    <td>{{achievement_counts}}</td>
+    <td><a href="{{urls}}">{{urls}}</a></td>
+  </tr>
+
+  {% endfor %}
+
+</table>
+
+
+    </h4>
+
+  </div>
+</div>

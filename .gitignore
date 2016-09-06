@@ -1,4 +1,4 @@
 # secret file 
 secrets.txt
 .ipynb_checkpoints
-
+*secrets.txt
