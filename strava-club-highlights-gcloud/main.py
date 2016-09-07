@@ -9,7 +9,7 @@ from flask import Flask
 from stravalib import Client
 from stravalib import unithelper
 from StringIO import StringIO
-
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -33,6 +33,10 @@ def main():
     MY_STRAVA_CLIENT_ID = f.readline().strip()
     MY_STRAVA_CLIENT_SECRET = f.readline().strip()
 
+  with open('maps.txt') as f:
+    gid = f.readline().strip()
+  session['gid']=gid #google map api key
+  
   access_token = getToken(MY_STRAVA_CLIENT_ID, MY_STRAVA_CLIENT_SECRET)
   if access_token == None:
       return redirectAuth(MY_STRAVA_CLIENT_ID)
@@ -228,9 +232,25 @@ def make_heat_map(data):
   heat_lons = [val for sublist in heat_lons for val in sublist]
   gmap.heatmap(heat_lats,heat_lons)
   output = StringIO()
-#  response = make_response(output.getvalue())
-  gmap.draw_file(output)
+  gmap.draw_file(output, session['gid'])
   return output.getvalue()
+
+#i think fname can be output from above (stringio)
+def insertapikey(fname, apikey):
+  def putkey(htmltxt, apikey, apistring=None):
+    if not apistring:
+            apistring = "https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap"
+    soup = BeautifulSoup(htmltxt.getvalue(), 'html.parser')
+    body = soup.body
+    src = apistring % (apikey, )
+    tscript = soup.new_tag("script", src=src, async="defer")
+    body.insert(-1, tscript)
+    return soup
+    #htmltxt = open(fname, 'r').read()
+  htmltxt = fname #where fname is output from above
+  soup = putkey(htmltxt, apikey)
+  newtxt = soup.prettify()
+  return newtxt
 
 def redirectAuth(MY_STRAVA_CLIENT_ID):
   client = Client()

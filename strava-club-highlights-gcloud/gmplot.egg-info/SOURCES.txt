@@ -1,0 +1,5 @@
+gmplot.egg-info/PKG-INFO
+gmplot.egg-info/SOURCES.txt
+gmplot.egg-info/dependency_links.txt
+gmplot.egg-info/requires.txt
+gmplot.egg-info/top_level.txt
