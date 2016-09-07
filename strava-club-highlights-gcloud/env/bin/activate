@@ -39,7 +39,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/stephanie/projects/strava/strava-club-highlights/env"
+VIRTUAL_ENV="/Users/stephanie/projects/strava/strava-club-highlights-gcloud/env"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

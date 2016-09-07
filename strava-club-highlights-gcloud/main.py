@@ -2,8 +2,6 @@ import polyline
 import gmplot
 import pandas as pd
 import numpy as np
-#import subprocess #for printing stdout to app
-#import time
 from flask import render_template, request, redirect, make_response, session, Response
 from flask import Flask
 from stravalib import Client
@@ -53,40 +51,49 @@ def main():
   session['cids']=cids
   session['cnames']=cnames
   session['athlete_name'] = athlete.firstname + ' ' + athlete.lastname
-  return redirect('/options')
+  return redirect('/cluboptions')
 
-@app.route("/options", methods=['GET','POST'])
+@app.route("/cluboptions", methods=['GET','POST'])
 def set_options():
   if request.method == 'GET':
      q = 'Choose a club to analyze.'
      clubs = zip(session['cids'], session['cnames'])
-     return render_template('options.html',question=q,clubs=clubs)
+     return render_template('cluboptions.html',question=q,clubs=clubs)
   else:   #request was a POST
      session['cid'] = int(request.form['choice'])
      #also store club name..
      club_dict = dict(zip(session['cids'],session['cnames']))
      session['cname']=club_dict[session['cid']]
      print(club_dict)
-  return redirect('/options2')
+  return redirect('/options')
 
-@app.route("/options2", methods=['GET','POST'])
+@app.route("/options", methods=['GET','POST'])
 def set_options2():
   if request.method == 'GET':
      q = 'What are you interested in seeing?'
      output_types = ['Heatmap of recent club activities',\
-                     'Recent club activities with many achievements']
+                     'Map of recent club activity routes',\
+                     'Recent club activities with many achievements',\
+                     'Recent club activities with many kudos',\
+                     'Recent races run by club members']
      output_inds = range(len(output_types))
      choices = zip(output_inds, output_types)
-     return render_template('options2.html',question=q,choices=choices)
+     return render_template('options.html',question=q,choices=choices)
   else:   #request was a POST
      output_choice = int(request.form['choice2'])
      print output_choice
      if output_choice == 0:
-        return redirect('/result2')
-     else:
-        return redirect('/result')
+        return redirect('/heatmap')
+     if output_choice == 1:
+        return redirect('/routemap')
+     if output_choice == 2:
+        return redirect('/achievements')
+     if output_choice == 3:
+        return redirect('/kudos')
+     if output_choice == 4:
+        return redirect('/races')
 
-@app.route("/result2")
+@app.route("/heatmap")
 def heat_map():
   client = Client(access_token=session['access_token'])
   club = get_club_activities(client,session['cid'])
@@ -94,26 +101,57 @@ def heat_map():
   data=local_runs
   return make_heat_map(data)  
 
-@app.route("/result")
-def results_table():
+@app.route("/routemap")
+def route_map():
+  client = Client(access_token=session['access_token'])
+  club = get_club_activities(client,session['cid'])
+  local_runs = get_local_runs(club)
+  data=local_runs
+  return make_route_map(data)  
 
+@app.route("/achievements")
+def results_table():
+  client = Client(access_token=session['access_token'])
+  # get the 5 activities with the most achievements
+  club = get_club_activities(client,session['cid'])
+  #highest achieving athletes
+  subset = club.sort_values('achievement_counts',ascending=False).head(50)
+  # make urls from athlete_ids
+  base_url = 'https://www.strava.com/activities/'
+  urls = [base_url + str(i) for i in subset.ids.tolist()]
+  # put in list of lists
+  output_list = zip(subset['names'],subset['achievement_counts'], urls)
+  return render_template('result.html', table_rows = output_list)
+
+@app.route("/kudos")
+def results_table_kudos():
   # get the rivals data frame
   #rivals = nearest_rivals_from_file()
   client = Client(access_token=session['access_token'])
   # get the 5 activities with the most achievements
   club = get_club_activities(client,session['cid'])
   #highest achieving athletes
-  subset = club.sort_values('achievement_counts',ascending=False).head(50)
-  #here, route progress to screen...
-  #rivals = nearest_rivals(client, max_rivals = 10)
-  #rivals = nearest_rivals_from_file()
+  subset = club.sort_values('kudos_counts',ascending=False).head(50)
   # make urls from athlete_ids
   base_url = 'https://www.strava.com/activities/'
   urls = [base_url + str(i) for i in subset.ids.tolist()]
   # put in list of lists
-  output_list = zip(subset['names'],subset['achievement_counts'], urls)
-  #rivals_list = zip(rivals['athlete_name'], rivals['counts'], urls)
-  return render_template('result.html', table_rows = output_list)
+  output_list = zip(subset['names'],subset['kudos_counts'], urls)
+  return render_template('result_kudos.html', table_rows = output_list)
+
+@app.route("/races")
+def races_table():
+  client = Client(access_token=session['access_token'])
+  # get the 5 activities with the most achievements
+  club = get_club_activities(client,session['cid'])
+  #races!
+  subset = club[club['workout_types']=='1']
+  # make urls from athlete_ids
+  base_url = 'https://www.strava.com/activities/'
+  urls = [base_url + str(i) for i in subset.ids.tolist()]
+  # put in list of lists
+  output_list = zip(subset['names'],subset['distances'], urls)
+  return render_template('races.html', table_rows = output_list)
 
 def get_club_activities(client,cid):
     ids = []
@@ -235,22 +273,20 @@ def make_heat_map(data):
   gmap.draw_file(output, session['gid'])
   return output.getvalue()
 
-#i think fname can be output from above (stringio)
-def insertapikey(fname, apikey):
-  def putkey(htmltxt, apikey, apistring=None):
-    if not apistring:
-            apistring = "https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap"
-    soup = BeautifulSoup(htmltxt.getvalue(), 'html.parser')
-    body = soup.body
-    src = apistring % (apikey, )
-    tscript = soup.new_tag("script", src=src, async="defer")
-    body.insert(-1, tscript)
-    return soup
-    #htmltxt = open(fname, 'r').read()
-  htmltxt = fname #where fname is output from above
-  soup = putkey(htmltxt, apikey)
-  newtxt = soup.prettify()
-  return newtxt
+def make_route_map(data):
+  threshold = session['threshold']
+  ts = [0.5, 1, 2, 5, 10, 20, 90]
+  zs = [10, 10, 10, 5, 5, 1] #zoom 1 is all the way out
+  zooms = dict(zip(ts, zs)) #zooms dictionary to get a proper zoom for a given threshold
+  gmap = gmplot.GoogleMapPlotter(session['lat_med'], session['lon_med'], zooms[threshold])
+  for m in data.maps.values:
+    summary_lat_lon = polyline.decode(m.summary_polyline)
+    lats = [i[0] for i in summary_lat_lon]
+    lons = [i[1] for i in summary_lat_lon]
+    gmap.plot(lats,lons,'blue', size=100, alpha=0.5, edge_width=5)
+  output = StringIO()
+  gmap.draw_file(output, session['gid'])
+  return output.getvalue()
 
 def redirectAuth(MY_STRAVA_CLIENT_ID):
   client = Client()

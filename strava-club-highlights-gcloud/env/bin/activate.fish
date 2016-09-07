@@ -32,7 +32,7 @@ end
 # unset irrelevant variables
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/stephanie/projects/strava/strava-club-highlights/env"
+set -gx VIRTUAL_ENV "/Users/stephanie/projects/strava/strava-club-highlights-gcloud/env"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

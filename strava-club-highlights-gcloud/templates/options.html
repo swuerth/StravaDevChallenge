@@ -2,13 +2,13 @@
 <title>Welcome</title>
 <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
 <div class=page>
-  <h1>Welcome to our Strava app!</h1>
+  <h1>Welcome to the Strava Club Highlights app!</h1>
   <div class=metanav>
     <h3>
      This app provides some highlights from recent club activities.
     </h3>
     <h3>
-        Thanks for signing in, {{session['athlete_name']}}! 
+        You have chosen {{session['cname']}}
   </h3>
 
   <div class=metanav>
@@ -19,8 +19,8 @@
       <form id='answerform' method='post' action='options' >
         <p>
           Answer: <br />
-          {% for id, name in clubs %}
-          <input type='radio' name='choice' value={{id}} /> {{name}} <br />
+          {% for id, name in choices %}
+          <input type='radio' name='choice2' value={{id}} /> {{name}} <br />
           {% endfor %}
         </p>
 
